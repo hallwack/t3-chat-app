@@ -59,6 +59,13 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ],
+  pages: {
+    newUser: '/register',
+    signIn: '/register'
+  },
+  session: {
+    strategy: 'jwt'
+  }
 };
 
 export default NextAuth(authOptions);
