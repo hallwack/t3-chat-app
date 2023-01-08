@@ -1,5 +1,7 @@
+import type { Awaitable, RequestInternal, User } from "next-auth";
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import CredentialsProvider from "next-auth/providers/credentials";
 // Prisma adapter for NextAuth, optional and can be removed
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
@@ -14,6 +16,12 @@ export const authOptions: NextAuthOptions = {
         session.user.id = user.id;
       }
       return session;
+    },
+    jwt({ token, account }) {
+      if (account) {
+        token.accessToken = account.access_token
+      }
+      return token
     },
   },
   // Configure one or more authentication providers
@@ -32,6 +40,24 @@ export const authOptions: NextAuthOptions = {
      * NextAuth.js docs for the provider you want to use. Example:
      * @see https://next-auth.js.org/providers/github
      */
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      authorize: async function(credentials: Record<"email" | "password", string> | undefined, req: Pick<RequestInternal, "query" | "headers" | "body" | "method">): Promise<User | null> {
+        const user = await prisma?.user.findFirst({
+          where: { email: credentials?.email, password: credentials?.password }
+        })
+
+        if (user) {
+          return user
+        } else {
+          return null
+        }
+      }
+    })
   ],
 };
 
